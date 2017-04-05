@@ -1,0 +1,2171 @@
+--4.1总体情况
+select xzqh,sum(scqyzs) as scqyzs,sum(cjqy) as cjqyzs,
+       round(sum(cjqy)/dbo.dividend(sum(scqyzs))*100, 2) as cjqyzb,
+       sum(hgpc) as hgpczs,sum(bhgpc) as bhpczs,
+       round(sum(hgpc)/dbo.dividend(sum(cjpc))*100,2) as zthgl,
+       sum(jcjggcpc) as jcjggcpczs,sum(jcjgscpc) as jcjgscpczs,sum(cjjgs) as cjjgzs
+from(
+select case when a.qhdm like '13%' then '河北省' else '非河北省' end as xzqh,
+       count(*) as scqyzs,sum(cjqy) as cjqy,sum(hg) as hgpc,sum(bhg) as bhgpc,sum(cjpc) as cjpc,
+       0 as jcjggcpc,0 as jcjgscpc,0 as cjjgs
+  from dxdl_scqy a
+       left join(
+       select scdwid,1 as cjqy,
+              sum(case when zhpd='ZP01' then 1 else 0 end) as hg,
+              sum(case when zhpd='ZP02' then 1 else 0 end) as bhg,
+              count(*) as cjpc
+         from dxdl_JY_REPROT_MAIN
+        where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+        group by scdwid) b on a.id=b.scdwid
+ group by case when a.qhdm like '13%' then '河北省' else '非河北省' end
+union all
+select case when qhdm like '13%' then '河北省' else '非河北省' end as xzqh,
+       0,0,0,0,0,sum(gc),sum(sc),count(*)
+from(
+select a.qhdm,a.id,
+       case when max(b.rwlb)='RL0202' then 1 else 0 end gc,
+       case when min(b.rwlb)='RL0201' then 1 else 0 end sc
+  from JCJG_COALORG_INFO a left join dxdl_JY_REPROT_MAIN b on a.id=b.cjdwid
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+ group by a.qhdm,a.id) a
+group by case when qhdm like '13%' then '河北省' else '非河北省' end)a
+group by xzqh
+--企业列表
+select * from dxdl_scqy where qhdm like '13%'
+--非河北省企业列表
+select * from dxdl_scqy where qhdm not like '13%'
+--抽检河北省企业列表
+select * from dxdl_scqy 
+where qhdm like '13%' 
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN 
+            where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--抽检非河北省企业列表
+select * from dxdl_scqy 
+where qhdm not like '13%'/*条件*/ 
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN 
+            where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--抽检合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like '13%' and a.zhpd='ZP01'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检非河北省企业合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm not like '13%' and a.zhpd='ZP01'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检不合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like '13%' and a.zhpd='ZP02'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检非河北省不合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm not like '13%' and a.zhpd='ZP02'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--4.1总体情况 表0
+select areacode,areaname,sum(scqyzs) as scqyzs,sum(cjqy) as cjqyzs,
+       round(sum(cjqy)/dbo.dividend(sum(scqyzs))*100, 2) as cjqyzb,
+       sum(hgpc) as hgpczs,sum(bhgpc) as bhpczs,
+       round(sum(hgpc)/dbo.dividend(sum(cjpc))*100,2) as zthgl,
+       sum(jcjggcpc) as jcjggcpczs,sum(jcjgscpc) as jcjgscpczs,sum(cjjgs) as cjjgzs
+from(
+select isnull(c.areacode,'410000'/*条件：行政区划*/) as areacode,
+       isnull(c.areaname,dbo.getareaname('410000'/*条件：行政区划*/,1)) as areaname,
+       count(*) as scqyzs,sum(isnull(cjqy,0)) as cjqy,
+       sum(isnull(hg,0)) as hgpc,sum(isnull(bhg,0)) as bhgpc,sum(isnull(cjpc,0)) as cjpc,
+       0 as jcjggcpc,0 as jcjgscpc,0 as cjjgs
+  from dxdl_scqy a
+       left join(
+       select scdwid,1 as cjqy,
+              sum(case when zhpd='ZP01' then 1 else 0 end) as hg,
+              sum(case when zhpd='ZP02' then 1 else 0 end) as bhg,
+              count(*) as cjpc
+         from dxdl_JY_REPROT_MAIN
+        where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+        group by scdwid) b on a.id=b.scdwid
+        left join af_area c on substring(a.qhdm,1,len(dbo.getarea('410000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+ where a.qhdm like dbo.getarea('410000'/*条件：行政区划*/)+'%'
+ group by c.areacode,c.areaname
+union all
+select isnull(c.areacode,'410000'/*条件：行政区划*/) as areacode,
+       isnull(c.areaname,dbo.getareaname('410000'/*条件：行政区划*/,1)) as areaname,
+       0,0,0,0,0,sum(gc),sum(sc),count(*)
+from(
+select a.qhdm,a.id,
+       case when max(b.rwlb)='RL0202' then 1 else 0 end gc,
+       case when min(b.rwlb)='RL0201' then 1 else 0 end sc
+  from JCJG_COALORG_INFO a left join dxdl_JY_REPROT_MAIN b on a.id=b.cjdwid 
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+ group by a.qhdm,a.id) a inner join af_area c on substring(a.qhdm,1,len(dbo.getarea('410000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+where a.qhdm like dbo.getarea('410000'/*条件：行政区划*/)+'%'
+group by isnull(c.areacode,'410000'/*条件：行政区划*/),
+       isnull(c.areaname,dbo.getareaname('410000'/*条件：行政区划*/,1)))a
+group by areacode,areaname
+order by areacode
+--企业列表
+select * from dxdl_scqy where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%'
+--抽检河北省企业列表
+select * from dxdl_scqy 
+where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%'
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN 
+            where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--抽检合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%' and a.zhpd='ZP01'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检不合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%' and a.zhpd='ZP02'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+
+--4.1总体情况 表1
+select a.qhdm,b.areaname,a.id,a.qymc,a.scdz,a.fr,a.CCCzsbh,a.scxkzbh,a.qygmmc
+from dxdl_scqy a inner join af_area b on a.qhdm=b.areacode
+where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%'
+  --抽检企业加下一句
+  and a.id in(select distinct scdwid from dxdl_JY_REPROT_MAIN where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年
+
+份段*/)
+--企业基本信息、详细信息
+select * from dxdl_scqy where id='1'/*条件：企业ID*/
+--企业列表
+select * from dxdl_scqy where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%'
+  --抽检企业加下一句
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--检验信息
+select * from dxdl_JY_REPROT_MAIN where scdwid='1'/*条件：企业ID*/ and year>='2010'/*条件：年份段*/ and year<='2017'/*条件：
+
+年份段*/
+
+--4.1总体情况 表2
+select cjdwid,cjdw,sum(gcpc) as gcpc,sum(scpc) as scpc,sum(rw) as rwzl,
+       round(sum(rw)/(select count(*) from dxdl_JY_REPROT_MAIN 
+                                  where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/),2)*100 as rwzb
+from(
+select cjdwid,cjdw,
+       case when rwlb='RL0202' then 1 else 0 end gcpc,
+       case when rwlb='RL0201' then 1 else 0 end scpc,
+       1 as rw
+from dxdl_JY_REPROT_MAIN
+where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/) a
+group by cjdwid,cjdw
+--承检机构详细信息
+select * from JCJG_COALORG_INFO 
+ where id=0/*条件：承检机构ID*/
+
+
+--总体情况表0（非河北省）
+select areacode,areaname,sum(scqyzs) as scqyzs,sum(cjqy) as cjqyzs,
+       round(sum(cjqy)/dbo.dividend(sum(scqyzs))*100, 2) as cjqyzb,
+       sum(hgpc) as hgpczs,sum(bhgpc) as bhpczs,
+       round(sum(hgpc)/dbo.dividend(sum(cjpc))*100,2) as zthgl,
+       sum(jcjggcpc) as jcjggcpczs,sum(jcjgscpc) as jcjgscpczs,sum(cjjgs) as cjjgzs
+from(
+select c.areacode,c.areaname,
+       count(*) as scqyzs,sum(isnull(cjqy,0)) as cjqy,
+       sum(isnull(hg,0)) as hgpc,sum(isnull(bhg,0)) as bhgpc,sum(isnull(cjpc,0)) as cjpc,
+       0 as jcjggcpc,0 as jcjgscpc,0 as cjjgs
+  from dxdl_scqy a
+       left join(
+       select scdwid,1 as cjqy,
+              sum(case when zhpd='ZP01' then 1 else 0 end) as hg,
+              sum(case when zhpd='ZP02' then 1 else 0 end) as bhg,
+              count(*) as cjpc
+         from dxdl_JY_REPROT_MAIN
+        where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+        group by scdwid) b on a.id=b.scdwid
+        left join af_area c on left(a.qhdm,4)+'00'=dbo.getarea(c.areacode)
+ where a.qhdm not like '13%'
+ group by c.areacode,c.areaname
+union all
+select c.areacode,c.areaname,
+       0,0,0,0,0,sum(gc),sum(sc),count(*)
+from(
+select a.qhdm,a.id,
+       case when max(b.rwlb)='RL0202' then 1 else 0 end gc,
+       case when min(b.rwlb)='RL0201' then 1 else 0 end sc
+  from JCJG_COALORG_INFO a left join dxdl_JY_REPROT_MAIN b on a.id=b.cjdwid 
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/ and a.qhdm not like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by a.qhdm,a.id) a inner join af_area c on substring(a.qhdm,1,len(dbo.getarea('130000'/*条件：行政区划*/))+2)
+
+=dbo.getarea(c.areacode)
+where a.qhdm not like '13%'
+group by c.areacode,c.areaname)a
+group by areacode,areaname
+order by areacode
+
+
+
+
+
+
+
+
+
+
+
+--4.2.1.1生产企业地区分布情况
+select isnull(areacode,'130000'/*条件：行政区划*/) as areacode,
+       isnull(areaname,(select max(areaname) from af_area where areacode='130000'/*条件：行政区划*/)) as areaname,
+       qysl,isnull(cjpc,0) as cjpc,
+       CCCqysl,round(convert(decimal(10,2),CCCqysl)/qysl,2)*100 as CCCqyzb,
+       scxkzqysl,round(convert(decimal(10,2),scxkzqysl)/qysl,2)*100 as scxkzqyzb,
+       dxqysl,round(convert(decimal(10,2),dxqysl)/qysl,2)*100 as dxqyzb,
+       zxqysl,round(convert(decimal(10,2),zxqysl)/qysl,2)*100 as zxqyzb,
+       xxqysl,round(convert(decimal(10,2),xxqysl)/qysl,2)*100 as xxqyzb
+from(
+select c.areacode,c.areaname,count(distinct a.qymc) as qysl,sum(b.cjpc) as cjpc,
+       sum(case when a.CCCzsbh is null then 0 else 1 end) as CCCqysl,
+       sum(case when a.scxkzbh is null then 0 else 1 end) as scxkzqysl,
+       sum(case when a.qygmmc='大型' then 1 else 0 end) as dxqysl,
+       sum(case when a.qygmmc='中型' then 1 else 0 end) as zxqysl,
+       sum(case when a.qygmmc='小型' then 1 else 0 end) as xxqysl
+from dxdl_scqy a 
+     left join (select scdwid,count(*) as cjpc from dxdl_JY_REPROT_MAIN group by scdwid) b on a.id=b.scdwid
+     left join AF_AREA c on substring(a.qhdm,1,len(dbo.getarea('130000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+where a.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by c.areacode,c.areaname) a
+order by areacode
+--下级生产企业地区分布情况（点击地区）
+select isnull(areacode,'130500'/*条件：行政区划*/) as areacode,
+       isnull(areaname,(select max(areaname) from af_area where areacode='130500'/*条件：行政区划*/)) as areaname,
+       qysl,isnull(cjpc,0) as cjpc,
+       CCCqysl,round(convert(decimal(10,2),CCCqysl)/qysl,2)*100 as CCCqyzb,
+       scxkzqysl,round(convert(decimal(10,2),scxkzqysl)/qysl,2)*100 as scxkzqyzb,
+       dxqysl,round(convert(decimal(10,2),dxqysl)/qysl,2)*100 as dxqyzb,
+       zxqysl,round(convert(decimal(10,2),zxqysl)/qysl,2)*100 as zxqyzb,
+       xxqysl,round(convert(decimal(10,2),xxqysl)/qysl,2)*100 as xxqyzb
+from(
+select c.areacode,c.areaname,count(distinct a.qymc) as qysl,sum(b.cjpc) as cjpc,
+       sum(case when a.CCCzsbh is null then 0 else 1 end) as CCCqysl,
+       sum(case when a.scxkzbh is null then 0 else 1 end) as scxkzqysl,
+       sum(case when a.qygmmc='大型' then 1 else 0 end) as dxqysl,
+       sum(case when a.qygmmc='中型' then 1 else 0 end) as zxqysl,
+       sum(case when a.qygmmc='小型' then 1 else 0 end) as xxqysl
+from dxdl_scqy a 
+     left join (select scdwid,count(*) as cjpc from dxdl_JY_REPROT_MAIN group by scdwid) b on a.id=b.scdwid
+     left join AF_AREA c on substring(a.qhdm,1,len(dbo.getarea('130500'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+where a.qhdm like dbo.getarea('130500'/*条件：行政区划*/)+'%'
+group by c.areacode,c.areaname) a
+order by areacode
+--企业列表
+select * from dxdl_scqy where qhdm like dbo.getarea('130500')+'%'
+--检验报告
+select a.* from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like dbo.getarea('130500'/*条件*/)+'%'
+
+
+
+
+
+
+
+
+
+
+
+
+--4.2.1.2产业聚集工生产企业地区分布情况
+select isnull(areacode,'130000'/*条件：行政区划*/) as areacode,
+       dbo.getareaname(isnull(areacode,'130000'/*条件：行政区划*/),2) as areaname,
+       qysl,isnull(cjpc,0) as cjpc,
+       CCCqysl,round(convert(decimal(10,2),CCCqysl)/qysl,2)*100 as CCCqyzb,
+       scxkzqysl,round(convert(decimal(10,2),scxkzqysl)/qysl,2)*100 as scxkzqyzb,
+       dxqysl,round(convert(decimal(10,2),dxqysl)/qysl,2)*100 as dxqyzb,
+       zxqysl,round(convert(decimal(10,2),zxqysl)/qysl,2)*100 as zxqyzb,
+       xxqysl,round(convert(decimal(10,2),xxqysl)/qysl,2)*100 as xxqyzb
+from(
+select c.areacode,c.areaname,count(distinct a.qymc) as qysl,sum(b.cjpc) as cjpc,
+       sum(case when a.CCCzsbh is null then 0 else 1 end) as CCCqysl,
+       sum(case when a.scxkzbh is null then 0 else 1 end) as scxkzqysl,
+       sum(case when a.qygmmc='大型' then 1 else 0 end) as dxqysl,
+       sum(case when a.qygmmc='中型' then 1 else 0 end) as zxqysl,
+       sum(case when a.qygmmc='小型' then 1 else 0 end) as xxqysl
+from dxdl_scqy a 
+     left join (select scdwid,count(*) as cjpc from dxdl_JY_REPROT_MAIN group by scdwid) b on a.id=b.scdwid
+     left join AF_AREA c on a.qhdm=dbo.getarea(c.areacode)
+where a.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by c.areacode,c.areaname
+having count(distinct a.qymc)>=30) a
+order by qysl desc
+--企业列表
+select * from dxdl_scqy where qhdm='130984'/*条件*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.2.2.1生产企业年度抽检情况
+select nf,sum(gc) as gcqys,sum(gcbhg) as gcbhgs,
+       round(sum(gcbhg)/dbo.dividend(sum(gc)), 2)*100 as gcbhgl,
+       sum(sc) as scqys,sum(scbhg) as scbhgs,
+       round(sum(scbhg)/dbo.dividend(sum(sc)), 2)*100 as scbhgl,
+       sum(cjqy) as cjqys,sum(bhg) as bhgs,
+       round(sum(bhg)/dbo.dividend(sum(cjqy)), 2)*100 as scbhgl
+from(
+select year as nf,scdwid,case when max(zhpd)='ZP02' then 1 else 0 end gcbhg,1 as gc,0 as scbhg,0 as sc,0 as bhg,0 as cjqy
+  from dxdl_JY_REPROT_MAIN
+ where year>='2011'/*条件：年份段*/ and year<='2011'/*条件：年份段*/
+   and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+   and rwlb='RL0202'
+ group by year,scdwid
+union ALL
+select year,scdwid,0 gcbhg,0 as gc,case when max(zhpd)='ZP02' then 1 else 0 end as scbhg,1 as sc,0 as bhg,0 as cjqy
+  from dxdl_JY_REPROT_MAIN
+ where year>='2011'/*条件：年份段*/ and year<='2011'/*条件：年份段*/
+   and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+   and rwlb='RL0201'
+ group by year,scdwid
+union ALL
+select year,scdwid,0 gcbhg,0 as gc,0 as scbhg,0 as sc,case when max(zhpd)='ZP02' then 1 else 0 end as bhg,1 as cjqy
+  from dxdl_JY_REPROT_MAIN
+ where year>='2011'/*条件：年份段*/ and year<='2011'/*条件：年份段*/
+   and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+   and rwlb='RL0201'
+ group by year,scdwid) a INNER join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+group by nf
+--点击表头
+select a.* from dxdl_JY_REPROT_MAIN a INNER JOIN dxdl_scqy b on a.scdwid=b.id
+where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/ and rwlb like 'RL0202%'
+  and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.2.2.2.1各地市抽检覆盖情况
+select c.areacode,c.areaname,count(*) as qysl,
+       sum(isnull(gc,0)) as gcqysl,
+       round(sum(isnull(gc,0))/dbo.dividend(count(*)),2)*100 as gcfgl,
+       sum(isnull(sc,0)) as scqysl,
+       round(sum(isnull(sc,0))/dbo.dividend(count(*)),2)*100 as scfgl,
+       sum(isnull(sl,0)) as cjqysl,
+       round(sum(isnull(sl,0))/dbo.dividend(count(*)),2)*100 as cjfgl
+from dxdl_scqy a 
+     left join 
+     (select scdwid,
+             case when max(rwlb)='RL0202' then 1 else 0 end as gc,
+             case when min(rwlb)='RL0201' then 1 else 0 end as sc,
+             1 as sl
+        from dxdl_JY_REPROT_MAIN
+       where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+         and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+       group by scdwid) b
+     on a.id=b.scdwid
+     left join af_area c on substring(a.qhdm,1,len(dbo.getarea('130000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+where a.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by c.areacode,c.areaname
+order by areacode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.2.2.2.2产业聚集区抽检覆盖情况
+select c.areacode,c.areaname,count(*) as qysl,
+       sum(isnull(gc,0)) as gcqysl,
+       round(sum(isnull(gc,0))/dbo.dividend(count(*)),2)*100 as gcfgl,
+       sum(isnull(sc,0)) as scqysl,
+       round(sum(isnull(sc,0))/dbo.dividend(count(*)),2)*100 as scfgl,
+       sum(isnull(sl,0)) as cjqysl,
+       round(sum(isnull(sl,0))/dbo.dividend(count(*)),2)*100 as cjfgl
+from dxdl_scqy a 
+     left join 
+     (select scdwid,
+             case when max(rwlb)='RL0202' then 1 else 0 end as gc,
+             case when min(rwlb)='RL0201' then 1 else 0 end as sc,
+             1 as sl
+        from dxdl_JY_REPROT_MAIN
+       where year>='2012'/*条件1*/ and year<='2012'/*条件2*/
+         and cpmc like '%'/*条件3*/ and cpid like '%'/*条件4*/
+       group by scdwid) b
+     on a.id=b.scdwid
+     left join af_area c on a.qhdm=c.areacode
+where a.qhdm like dbo.getarea('130000')+'%'
+group by c.areacode,c.areaname
+having count(*)>=30
+order by cjfgl desc
+--企业信息列表
+select * from dxdl_scqy where qhdm='130183'/*条件*/
+
+
+
+
+
+
+--4.2.2.2.1各地市抽检覆盖情况
+select c.areacode,c.areaname,sum(isnull(sl,0)) as cjqysl,
+       sum(isnull(sl,0))-sum(isnull(bhg,0)) as hgqys,
+       round((sum(isnull(sl,0))-sum(isnull(bhg,0)))/dbo.dividend(sum(sl)),2)*100 as hgl,
+       sum(isnull(bhg,0)) as bhgqys,
+       round(sum(isnull(bhg,0))/dbo.dividend(sum(sl)),2)*100 as bhgl
+from dxdl_scqy a 
+     left join 
+     (select scdwid,
+             case when max(zhpd)='ZP02' then 1 else 0 end as bhg,
+             1 as sl
+        from dxdl_JY_REPROT_MAIN
+       where year>='2010'/*条件:年份段*/ and year<='2017'/*条件：年份段*/
+         and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+         and rwlb like 'RL02%'/*条件：抽检类型*/
+       group by scdwid) b
+     on a.id=b.scdwid
+     left join af_area c on substring(a.qhdm,1,len(dbo.getarea('130000')/*条件：*/)+2)=dbo.getarea(c.areacode)
+where a.qhdm like dbo.getarea('130000')/*条件：行政区划*/+'%'
+group by c.areacode,c.areaname
+order by areacode
+--企业列表
+select * from dxdl_scqy 
+where id in(select distinct scdwid from dxdl_JY_REPROT_MAIN 
+             where year>='2012'/*条件：年份段*/ and year<='2012'/*条件：年份段*/
+               and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称*/
+               and rwlb like 'RL02%'/*条件：抽检类型*/ and zhpd='ZP01'/*条件：是否合格*/)
+  and qhdm like dbo.getarea('130100'/*条件：行政区划*/)+'%'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.2.2.3.2产业聚集区生产企业抽检情况
+select top 3/*条件：数量排名前X*/ c.areacode,c.areaname,sum(isnull(sl,0)) as cjqysl,
+       sum(isnull(sl,0))-sum(isnull(bhg,0)) as hgqys,
+       round((sum(isnull(sl,0))-sum(isnull(bhg,0)))/dbo.dividend(sum(sl)),2)*100 as hgl,
+       sum(isnull(bhg,0)) as bhgqys,
+       round(sum(isnull(bhg,0))/dbo.dividend(sum(sl)),2)*100 as bhgl/**/
+from dxdl_scqy a 
+     left join 
+     (select scdwid,
+             case when max(zhpd)='ZP02' then 1 else 0 end as bhg,
+             1 as sl
+        from dxdl_JY_REPROT_MAIN
+       where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+         and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+         and rwlb like 'RL02%'/*条件：抽检类型*/
+       group by scdwid) b 
+     on a.id=b.scdwid
+     inner join af_area c on a.qhdm=c.areacode
+where a.qhdm like dbo.getarea('130000'/*条件5*/)+'%'
+group by c.areacode,c.areaname
+having count(*)>=30
+order by count(*) desc
+--企业列表
+select * from dxdl_scqy 
+where id in(select scdwid from dxdl_JY_REPROT_MAIN 
+             where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+               and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+               and rwlb like 'RL02%'/*条件：抽检类型*/
+             group by scdwid having max(zhpd)='ZP01'/*条件：是否合格*/)
+  and qhdm like dbo.getarea('130528'/*条件：行政区划*/)+'%'
+
+
+
+
+
+
+
+
+
+
+
+--4.2.2.4按企业规模分类统计抽检情况
+select a.qygmmc,zcjqys,count(*) as cjqys,
+       round(count(*)*1.0/dbo.dividend(zcjqys)*100,2) as zb,
+       sum(hg) as hgqys,
+       round(sum(hg)*1.0/dbo.dividend(count(*))*100,2) as qyhgl,
+       sum(cjpc) as cjpc,sum(hgpc) as hgpc,
+       dbo.getarea(round(sum(hgpc)*1.0/dbo.dividend(sum(cjpc))*100,2)) as cjcphgl
+from dxdl_scqy a
+     inner join(
+			select scdwid,
+						 case when max(zhpd)='ZP01' then 1 else 0 end as hg,
+						 count(*) as cjpc,
+						 sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc
+				from dxdl_JY_REPROT_MAIN
+			 where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+				 and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+				 and rwlb like 'RL02%'/*条件：抽检类型*/
+       group by scdwid) b on a.id=b.scdwid
+     inner join af_area c on substring(a.qhdm,1,len(dbo.getarea('130000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+     inner join(
+     select count(*) as zcjqys
+				from dxdl_JY_REPROT_MAIN
+			 where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+				 and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+				 and rwlb like 'RL02%'/*条件：抽检类型*/) d on 1=1
+where a.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+  and a.qygmmc like '%'/*条件：企业规模*/
+group by a.qygmmc,d.zcjqys
+--合格企业列表
+select * from dxdl_scqy
+ where id in(select scdwid
+				from dxdl_JY_REPROT_MAIN
+			 where year>='2012'/*条件1*/ and year<='2012'/*条件2*/
+				 and cpmc like '%'/*条件3*/ and cpid like '%'/*条件4*/
+				 and rwlb like 'RL0201%'/*条件6*/
+       group by scdwid
+      having max(zhpd)='ZP01')
+   and qhdm like dbo.getarea('130000'/*条件5*/)+'%'
+   and qygmmc='大型'/*条件7*/
+--抽检企业列表
+select * from dxdl_scqy
+ where id in(select distinct scdwid
+				from dxdl_JY_REPROT_MAIN
+			 where year>='2012'/*条件1*/ and year<='2012'/*条件2*/
+				 and cpmc like '%'/*条件3*/ and cpid like '%'/*条件4*/
+				 and rwlb like 'RL0201%'/*条件6*/)
+   and qhdm like dbo.getarea('130000'/*条件5*/)+'%'
+   and qygmmc='大型'/*条件7*/
+
+
+
+
+
+
+
+
+
+
+--4.2.2.5生产企业重复抽检情况
+select isnull(isnull(a.cjcs,b.cjcs),c.cjcs) as cfcjcs,
+       isnull(a.cfgcqys,0) as cfgcqys,
+       round(isnull(a.cfgcqys,0)*1.0/dbo.dividend(gccjqyzs)*100, 2) as cfgcqyzb,
+       isnull(b.cfscqys,0) as cfscqys,
+       round(isnull(b.cfscqys,0)*1.0/dbo.dividend(sccjqyzs)*100, 2) as cfgcqyzb,
+       isnull(c.cfcjqys,0) as cfcjqys,
+       round(isnull(c.cfcjqys,0)*1.0/dbo.dividend(cjqyzs)*100, 2) as cfgcqyzb
+from(
+select cjcs,count(*) as cfgcqys,gccjqyzs from(
+select count(*) as cjcs,scdwid
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0202'
+ group by scdwid
+having count(*)>1/*条件：重复抽检区间*/ and count(*)<100/*条件：重复抽检区间*/) x,(
+select count(*) as gccjqyzs
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0202') y group by cjcs,gccjqyzs) a 
+full join(
+select cjcs,count(*) as cfscqys,sccjqyzs from(
+select count(*) as cjcs,scdwid
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0201'
+ group by scdwid
+having count(*)>1/*条件：重复抽检区间*/ and count(*)<100/*条件：重复抽检区间*/) x,(
+select count(*) as sccjqyzs
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0201') y group by cjcs,sccjqyzs) b on a.cjcs=b.cjcs
+full join(
+select cjcs,count(*) as cfcjqys,cjqyzs from(
+select count(*) as cjcs,scdwid
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by scdwid
+having count(*)>1/*条件：重复抽检区间*/ and count(*)<100/*条件：重复抽检区间*/) x,(
+select count(*) as cjqyzs
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%') y group by cjcs,cjqyzs) c on a.cjcs=c.cjcs
+order by cfcjcs desc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.2.3抽检企业不合格名单
+select c.areaname,b.qymc,b.CCCzsbh,b.scxkzbh,b.qygmmc,
+       count(*) as cjcs,
+       sum(case when zhpd='ZP01' then 1 else 0 end) as hgcs,
+       sum(case when zhpd='ZP02' then 1 else 0 end) as bhgcs,
+       round(sum(case when zhpd='ZP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as bhgjcl
+  from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on isnull(a.scdwid,0)=b.id
+       left join af_area c on b.qhdm=c.areacode
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and a.bgbh in(select distinct bgbh from dxdl_JY_REPROT_ITEM 
+                  where yjjyxm like '%' and ejjyxm like '%')
+ group by c.areaname,b.qymc,b.CCCzsbh,b.scxkzbh,b.qygmmc
+having sum(case when zhpd='ZP02' then 1 else 0 end)>0
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.2.4未抽检企业名单
+select a.qhdm,b.areaname,a.id,a.qymc,a.scdz,a.fr,a.CCCzsbh,a.scxkzbh,a.qygmmc
+from dxdl_scqy a inner join af_area b on a.qhdm=b.areacode
+where qhdm like dbo.getarea('130000')+'%'/*条件1*/ and qygmmc like '%'/*条件2*/
+  and a.id not in(select distinct scdwid from dxdl_JY_REPROT_MAIN)
+--企业基本信息、详细信息
+select * from dxdl_scqy where id='1'/*条件*/
+--企业列表
+select * from dxdl_scqy where qhdm='130101'/*条件*/ and qygmmc like '%'/*条件2*/
+and id not in(select distinct scdwid from dxdl_JY_REPROT_MAIN)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.3.1年度抽检情况
+select nf,count(distinct a.qhdm) as cjdqs,count(*) as cjqys,sum(hgqy) as hgqys,
+       round(sum(hgqy)*1.0/dbo.dividend(count(*))*100,2) as qyhgl,
+       sum(cjpc) as cjpc,sum(hgpc) as hgpc,sum(bhgpc) as bhgpc,
+       round(sum(bhgpc)*1.0/dbo.dividend(sum(cjpc))*100,2) as bhgjcl
+  from dxdl_scqy a
+       inner join(
+				select scdwid,
+							 year as nf,
+							 case when max(zhpd)='ZP01' then 1 else 0 end as hgqy,
+							 count(*) as cjpc,
+							 sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc,
+							 sum(case when zhpd='ZP02' then 1 else 0 end) as bhgpc
+					from dxdl_JY_REPROT_MAIN
+				 where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+					 and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称
+
+）*/
+					 and rwlb like 'RL02%'/*条件：抽检类型*/
+				 group by scdwid,year) b on a.id=b.scdwid
+ where a.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by nf
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.3.2.1各地市产品抽检情况
+select c.areacode,c.areaname,
+       count(*) as cjpc,sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc,
+       sum(case when zhpd='ZP02' then 1 else 0 end) as bhgpc,
+       round(sum(case when zhpd='ZP01' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as hgl,
+       round(sum(case when zhpd='ZP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join af_area c on b.qhdm like dbo.getarea(c.areacode)+'%' 
+       and pid in(select id from af_area where areacode='130000'/*条件：行政区划*/)
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+	 and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ 
+ group by c.areacode,c.areaname
+ order by c.areacode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.3.2.2产业聚集区的产品抽检情况
+select c.areacode,dbo.getareaname(c.areacode, 2) as areaname,
+       count(*) as cjpc,sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc,
+       sum(case when zhpd='ZP02' then 1 else 0 end) as bhgpc,
+       round(sum(case when zhpd='ZP01' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as hgl,
+       round(sum(case when zhpd='ZP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as bhgl
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join af_area c on b.qhdm=c.areacode
+ where year>='2012'/*条件1*/ and year<='2012'/*条件2*/
+	 and cpmc like '%'/*条件3*/ and cpid like '%'/*条件4*/
+	 and rwlb like 'RL0201%'/*条件5*/ and b.qhdm in('130528','130984','131026')
+ group by c.areacode,c.areaname
+ order by c.areacode
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.3.3按产品用途分类统计
+select c.sjflmc,count(*) as cjpc,
+       sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc,
+       sum(case when zhpd='ZP02' then 1 else 0 end) as bhgpc,
+       round(sum(case when zhpd='ZP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as bhgjcl
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join production_name c on a.cpid=c.id and c.ejflmc='电线电缆'
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by c.sjflmc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.3.4产品年度抽检批次统计
+select year as nf,
+       sum(case when a.cpmc='CP0317002' then 1 else 0 end) as dldlcjpc,
+       sum(case when a.cpmc='CP0317005' then 1 else 0 end) as dqzbydxdlcjpc,
+       sum(case when a.cpmc='CP0317004' then 1 else 0 end) as ldxcjpc,
+       sum(case when a.cpmc='CP0317001' then 1 else 0 end) as rdxcjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join production_name c on a.cpid=c.id and c.ejflmc='电线电缆'
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by year
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.3.5具体产品抽检情况
+select c.cpmc,c.sjflmc,count(*) as cjpc,
+       sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc,
+       sum(case when zhpd='ZP02' then 1 else 0 end) as bhgpc,
+       round(sum(case when zhpd='ZP01' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgjcl
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join production_name c on a.cpid=c.id and c.ejflmc='电线电缆'
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by c.cpmc,c.sjflmc
+having count(*)>0/*条件：抽检批次区间*/ and count(*)<1000/*条件：抽检批次区间*/
+order by c.sjflmc,c.cpmc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.1检验项目检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2010'/*条件:年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and b.cpmc like '%'/*条件：产品选择（分类）*/ and b.cpid like '%'/*条件：产品选择（名称）*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目名称*/ and ejjyxm like '%'/*条件：二级项目名称*/
+ group by a.yjjyxm,a.ejjyxm
+ order by a.yjjyxm,a.ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.2 产品不合格检验项目检测值的偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2012'/*条件:年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and b.cpmc like '%'/*条件：产品选择（分类）*/ and b.cpid like '%'/*条件：产品选择（名称）*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目名称*/ and ejjyxm like '%'/*条件：二级项目名称*/
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.3.1.1产品一检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件:抽检类型*/ and c.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目名称*/ and ejjyxm like '%'/*条件：二级项目名称*/
+   and b.cpid in(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('00'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=1)
+ group by a.yjjyxm,a.ejjyxm
+ order by a.yjjyxm,a.ejjyxm
+--产品一产品名称
+select cpmc from PRODUCTION_NAME where id IN(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('00'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.3.1.2产品一偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2012'/*条件:年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目*/ and ejjyxm like '%'/*条件：二级项目*/
+   and b.cpid in(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL0201%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=1)
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by a.yjjyxm,a.ejjyxm
+--产品一产品名称
+select cpmc from PRODUCTION_NAME where id IN(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('00'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=1)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.3.2.1产品二检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件:抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目名称*/ and ejjyxm like '%'/*条件：二级项目名称*/
+   and b.cpid in(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL0201%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=2)
+ group by a.yjjyxm,a.ejjyxm
+ order by a.yjjyxm,a.ejjyxm
+--产品二产品名称
+select cpmc from PRODUCTION_NAME where id IN(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('00'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.3.2.2产品二偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2012'/*条件:年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目*/ and ejjyxm like '%'/*条件：二级项目*/
+   and b.cpid in(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL0201%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=2)
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by a.yjjyxm,a.ejjyxm
+--产品二产品名称
+select cpmc from PRODUCTION_NAME where id IN(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('00'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=2)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.3.3.1产品三检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件:抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目名称*/ and ejjyxm like '%'/*条件：二级项目名称*/
+   and b.cpid in(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL0201%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=2)
+ group by a.yjjyxm,a.ejjyxm
+ order by a.yjjyxm,a.ejjyxm
+--产品三产品名称
+select cpmc from PRODUCTION_NAME where id IN(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('00'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.3.3.2产品三偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+ where b.year>='2012'/*条件:年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级项目*/ and ejjyxm like '%'/*条件：二级项目*/
+   and b.cpid in(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL0201%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=3)
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by a.yjjyxm,a.ejjyxm
+--产品三产品名称
+select cpmc from PRODUCTION_NAME where id IN(select cpid from(
+select ROW_NUMBER() OVER (ORDER BY count(*) desc) as rownum,cpid,count(*) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('00'/*条件：行政区划*/)+'%'
+group by cpid) a where rownum=3)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.4.1.1按导体材料分析--铜芯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.dt='铜芯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.4.1.2按导体材料分析--铜芯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.dt='铜芯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.4.2.1按导体材料分析--铝芯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.dt='铝芯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.4.2.2按导体材料分析--铝芯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.dt='铝芯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.1.1按绝缘材料分析--聚氯乙烯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.jy='聚氯乙烯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.1.2按绝缘材料分析--聚氯乙烯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.jy='聚氯乙烯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.2.1按绝缘材料分析--聚乙烯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.jy='聚乙烯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.2.2按绝缘材料分析--聚乙烯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.jy='聚乙烯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.3.1按绝缘材料分析--交联聚乙烯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.jy='交联聚乙烯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.3.2按绝缘材料分析--交联聚乙烯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.jy='交联聚乙烯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.4.1按绝缘材料分析--橡胶--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.jy='橡胶'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.4.2按绝缘材料分析--橡胶--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.jy='橡胶'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.5.1按绝缘材料分析--聚酯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.jy='聚酯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.5.5.2按绝缘材料分析--聚酯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.jy='聚酯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.1.1按护套材料分析--聚氯乙烯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.ht='聚氯乙烯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.1.2按护套材料分析--聚氯乙烯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.ht='聚氯乙烯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.2.1按护套材料分析--聚乙烯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.ht='聚乙烯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.2.2按护套材料分析--聚乙烯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.ht='聚乙烯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.3.1按护套材料分析--交联聚乙烯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.ht='交联聚乙烯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.3.2按护套材料分析--交联聚乙烯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.ht='交联聚乙烯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.4.1按护套材料分析--橡胶--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.ht='橡胶'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.4.2按护套材料分析--橡胶--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.ht='橡胶'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.5.1按护套材料分析--聚酯--检验情况
+select a.yjjyxm,a.ejjyxm,count(*) as jycs,
+       sum(case when dxpd='DP01' then 1 else 0 end) as hg,
+       sum(case when dxpd='DP02' then 1 else 0 end) as bhg,
+       round(sum(case when dxpd='DP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100,2) as bhgl
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2010'/*条件：年份段*/ and b.year<='2017'/*条件：年份段*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and d.ht='聚酯'
+ group by a.yjjyxm,a.ejjyxm
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.4.6.5.2按护套材料分析--聚酯--偏差情况
+select a.yjjyxm,a.ejjyxm,jsyq,jyjg,
+       dbo.getexam(jsyq,jyjg,'+') as zxpc,dbo.getexam(jsyq,jyjg,'-') as fxpc
+  from dxdl_JY_REPROT_ITEM a inner join dxdl_JY_REPROT_MAIN b on a.bgbh=b.bgbh
+       inner join dxdl_scqy c on b.scdwid=c.id
+       inner join dxdl_ggcldzb d on dbo.getggxhsx(b.xhgg)=d.ggxh
+ where b.year>='2012'/*条件：年份段*/ and b.year<='2012'/*条件：年份段*/
+	 and rwlb like 'RL0201%'/*条件：抽检类型*/ and c.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/
+   and d.ht='聚酯'
+   and dxpd='DP02' and patindex('%[0-9]%',jsyq)>1 and len(jsyq)<30 and dbo.getexam(jsyq,jyjg,'+') is not null
+ order by yjjyxm,ejjyxm
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.5.1检验机构承检情况统计
+select b.id,b.jgmc,count(*) as ccpc,
+       sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc,
+       sum(case when zhpd='ZP02' then 1 else 0 end) as bhgpc,
+       round(sum(case when zhpd='ZP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as bhgjcl
+  from dxdl_JY_REPROT_MAIN a inner join JCJG_COALORG_INFO b on a.cjdwid=b.id
+ where b.products like '%CP0317%' and zt=0
+   and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+ group by b.id,b.jgmc
+--合格报告列表
+select a.* from dxdl_JY_REPROT_MAIN a inner join JCJG_COALORG_INFO b on a.cjdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and a.cjdwid=100/*条件7*/ and a.zhpd='ZP01'
+--不合格报告列表
+select a.* from dxdl_JY_REPROT_MAIN a inner join JCJG_COALORG_INFO b on a.cjdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and a.cjdwid=100/*条件7*/ and a.zhpd='ZP02'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.5.2检验机构年度承检批次统计
+select b.id,b.jgmc,
+       sum(case when year='2012' then 1 else 0 end) as cjpc
+  from dxdl_JY_REPROT_MAIN a inner join JCJG_COALORG_INFO b on a.cjdwid=b.id
+ where b.products like '%CP0317%' and zt=0
+   and a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+ group by b.id,b.jgmc
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.6.1检验报告查询
+select a.id,bgbh,f.description rwlb,c.jgmc as cjjg,b.qymc as scqy,d.description as 检验结果,e.cpmc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join JCJG_COALORG_INFO c on a.cjdwid=c.id
+       inner join af_code d on a.zhpd=d.code and d.ownerid=2241
+       inner join af_code f on a.zhpd=d.code and f.ownerid=2262
+       inner join production_name e on a.cpid=e.id
+ where bgbh like '%'/*条件1*/ and a.rwlb like 'RL02%'/*条件2*/ 
+   and a.year>='2012'/*条件3*/ and a.year<='2012'/*条件4*/
+	 and a.cpmc like '%'/*条件5*/ and a.cpid like '%'/*条件6*/
+   and a.zxbz like '%'/*条件7*/
+   and b.qymc like '%%'/*条件8*/ and c.jgmc like '%%'/*条件9*/
+	 and b.qhdm like dbo.getarea('130000'/*条件10*/)+'%'
+   and c.qhdm like dbo.getarea('130000'/*条件11*/)+'%'
+   and a.zhpd like '%'/*条件12*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.6.2承检机构查询
+select a.id,a.jgmc,a.zzjgdm,b.areacode,dbo.getareaname(b.areacode,2) as areaname,a.fddbr,lxr,lxdh,lxrsj
+  from JCJG_COALORG_INFO a left join af_area b on a.qhdm=b.areacode
+ where a.jgmc like '%'/*条件:机构名称*/ and a.zzjgdm like '%'/*条件：组织机构代码*/
+   and a.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and a.tyshxydm like '%'/*条件：统一社会信息代码*/ and a.fddbr like '%'/*条件：法人*/
+   and a.lxr like '%'/*条件：联系人*/ and lxdh like '%%'/*条件：联系电话*/
+   and a.lxrsj like '%'/*条件：联系人手机*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.6.3生产企业查询
+select a.id,a.qymc,dbo.getareaname(b.areacode,2) as areaname,qygmmc,rs,tydm,CCCzsbh
+  from dxdl_scqy a left join af_area b on a.qhdm=b.areacode
+ where a.qymc like '%%'/*条件1*/ and a.qhdm like dbo.getarea('130000'/*条件2*/)+'%'
+   and a.qygmmc like '%'/*条件3*/
+--企业详细信息
+select a.id,a.qymc,b.areaname,qygmmc,rs,tydm,CCCzsbh,scxkzbh
+  from dxdl_scqy a left join af_area b on a.qhdm=b.areacode
+ where a.id=0/*条件*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+--4.7.1抽检不合格企业地理分布
+select b.areacode,b.areaname,count(*) as bhgqys 
+  from dxdl_scqy a inner join AF_AREA b on substring(a.qhdm,1,4)+'00'=b.areacode 
+ where a.id in(
+							select scdwid from dxdl_JY_REPROT_MAIN
+               where year>='2012'/*条件1*/ and year<='2012'/*条件2*/
+                 and rwlb like 'RL0201%'/*条件3*/
+							group by scdwid having max(zhpd)='ZP01')
+   and a.qhdm like '13%'
+ group by b.areacode,b.areaname
+ order by areacode
+
+
+
+
+
+
+
+
+
+
+
+
+--4.7.2企业地理分布
+select b.areacode,b.areaname,count(*) as qys 
+  from dxdl_scqy a inner join AF_AREA b on substring(a.qhdm,1,4)+'00'=b.areacode 
+ where a.qhdm like '13%'
+ group by b.areacode,b.areaname
+ order by areacode
+
+
+
+
+
+
+
+
+
+
+
+
+--4.7.3检测机构地理分布
+select b.areacode,b.areaname,count(*) as jcjgs 
+  from jcjg_coalorg_info a inner join AF_AREA b on substring(a.qhdm,1,4)+'00'=b.areacode
+ where a.qhdm like '13%' 
+ group by b.areacode,b.areaname
+ order by areacode

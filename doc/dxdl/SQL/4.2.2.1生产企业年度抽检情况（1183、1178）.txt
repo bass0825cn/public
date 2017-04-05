@@ -1,0 +1,33 @@
+--4.2.2.1生产企业年度抽检情况
+select newid() id,nf,sum(gc) as cjcs1,sum(gcbhg) as qysl1,
+       round(sum(gcbhg)/dbo.dividend(sum(gc))*100,2) as zb1,
+       sum(sc) as cjcs2,sum(scbhg) as qysl2,
+       round(sum(scbhg)/dbo.dividend(sum(sc))*100,2) as zb2,
+       sum(cjqy) as cjcs3,sum(bhg) as qysl3,
+       round(sum(bhg)/dbo.dividend(sum(cjqy))*100,2) as zb3
+from(
+select year as nf,scdwid,case when max(zhpd)='ZP02' then 1 else 0 end gcbhg,1 as gc,0 as scbhg,0 as sc,0 as bhg,0 as cjqy
+  from dxdl_JY_REPROT_MAIN
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+   and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+   and rwlb='RL0202'
+ group by year,scdwid
+union ALL
+select year,scdwid,0 gcbhg,0 as gc,case when max(zhpd)='ZP02' then 1 else 0 end as scbhg,1 as sc,0 as bhg,0 as cjqy
+  from dxdl_JY_REPROT_MAIN
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+   and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+   and rwlb='RL0201'
+ group by year,scdwid
+union ALL
+select year,scdwid,0 gcbhg,0 as gc,0 as scbhg,0 as sc,case when max(zhpd)='ZP02' then 1 else 0 end as bhg,1 as cjqy
+  from dxdl_JY_REPROT_MAIN
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+   and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+ group by year,scdwid) a INNER join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+group by nf
+--点击表头
+select a.* from dxdl_JY_REPROT_MAIN a INNER JOIN dxdl_scqy b on a.scdwid=b.id
+where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/ and rwlb like 'RL0202%'
+  and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'

@@ -1,0 +1,25 @@
+--4.2.2.2.2产业聚集区抽检覆盖情况
+select newid() id,c.areacode,c.areaname qyszd,count(*) as qysl,
+       sum(isnull(gc,0)) as cjqysl1,
+       round(sum(isnull(gc,0))/dbo.dividend(count(*))*100,2) as cjfgl1,
+       sum(isnull(sc,0)) as cjqysl2,
+       round(sum(isnull(sc,0))/dbo.dividend(count(*))*100,2) as cjfgl2,
+       sum(isnull(sl,0)) as cjqysl3,
+       round(sum(isnull(sl,0))/dbo.dividend(count(*))*100,2) as cjfgl3
+from dxdl_scqy a 
+     left join 
+     (select scdwid,
+             case when max(rwlb)='RL0202' then 1 else 0 end as gc,
+             case when min(rwlb)='RL0201' then 1 else 0 end as sc,
+             1 as sl
+        from dxdl_JY_REPROT_MAIN
+       where year>='2010'/*条件1*/ and year<='2017'/*条件2*/
+         and cpmc like '%'/*条件3*/ and cpid like '%'/*条件4*/
+       group by scdwid) b
+     on a.id=b.scdwid
+     left join af_area c on a.qhdm=c.areacode
+where a.qhdm like dbo.getarea('130000')+'%' and a.state=0
+group by c.areacode,c.areaname
+order by qysl desc
+--企业信息列表
+select * from dxdl_scqy where qhdm='130183'/*条件*/ and state=0

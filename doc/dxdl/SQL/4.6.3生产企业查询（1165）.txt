@@ -1,0 +1,12 @@
+--4.6.3生产企业查询
+ select a.id,a.qymc,dbo.getareaname(b.areacode,2) AS szd,qygmmc as qygm,CCCzsbh as rzzsbh 
+  from dxdl_scqy a left join af_area b on a.qhdm=b.areacode
+ where a.qymc like '%%'/*条件1*/ and a.qhdm like dbo.getarea('130000'/*条件2*/)+'%'
+
+   and a.qygm like '%'/*条件3*/   ？？？？
+
+--企业详细信息
+
+select a.id,a.qymc,a.qyszd AS szd ,b.areaname,qygmmc as qygm ,CCCzsbh as crz,scxkzbh as scxkzsh 
+  from dxdl_scqy a left join af_area b on a.qhdm=b.areacode
+ where a.id=0/*条件*/

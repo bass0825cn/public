@@ -1,0 +1,18 @@
+--4.3.4产品年度抽检批次统计
+select year as nf,
+       sum(case when a.cpmc='CP0317002' then 1 else 0 end) as dldlcjpc,
+       sum(case when a.cpmc='CP0317002' and zhpd='ZP02' then 1 else 0 end) as dldlbhgpc,
+       sum(case when a.cpmc='CP0317005' then 1 else 0 end) as dqzbydxdlcjpc,
+       sum(case when a.cpmc='CP0317005' and zhpd='ZP02' then 1 else 0 end) as dqzbydxdlbhgpc,
+       sum(case when a.cpmc='CP0317004' then 1 else 0 end) as ldxcjpc,
+       sum(case when a.cpmc='CP0317004' and zhpd='ZP02' then 1 else 0 end) as ldxbhgpc,
+       sum(case when a.cpmc='CP0317001' then 1 else 0 end) as rdxcjpc,
+       sum(case when a.cpmc='CP0317001' and zhpd='ZP02' then 1 else 0 end) as rdxbhgpc,
+       sum(case when a.cpmc='CP0317003' then 1 else 0 end) as txdxdlcjpc,
+       sum(case when a.cpmc='CP0317003' and zhpd='ZP02' then 1 else 0 end) as txdxdlbhgpc
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join production_name c on a.cpid=c.id and c.ejflmc='电线电缆'
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by year

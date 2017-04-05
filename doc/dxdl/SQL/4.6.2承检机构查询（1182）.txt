@@ -1,0 +1,14 @@
+--4.6.2承检机构查询
+select a.id,a.jgmc,a.zzjgdm as zjjgdm, b.areacode as qhdm,dbo.getareaname(b.areacode,2) AS qhmc,a.fddbr AS fr,lxr,lxdh,lxrsj AS lxsj
+  from JCJG_COALORG_INFO a left join af_area b on a.qhdm=b.areacode
+ where a.jgmc like '%'/*条件:机构名称*/ and a.zzjgdm like '%'/*条件：组织机构代码*/
+   and a.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and a.tyshxydm like '%'/*条件：统一社会信息代码*/ and a.fddbr like '%'/*条件：法人*/
+   and a.lxr like '%'/*条件：联系人*/ and lxdh like '%%'/*条件：联系电话*/
+   and a.lxrsj like '%'/*条件：联系人手机*/
+
+-----承检机构基础信息
+
+select a.id,a.jgmc,a.zzjgdm,b.areacode,dbo.getareaname(b.areacode,2) as xzqy,a.fddbr as fr ,lxr,lxdh,lxrsj as lxsj ,a.gdzc,a.yzbm,a.txdz 
+   from JCJG_COALORG_INFO a left join af_area b on a.qhdm=b.areacode
+   where a.id = 0

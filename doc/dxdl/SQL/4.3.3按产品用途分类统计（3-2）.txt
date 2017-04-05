@@ -1,0 +1,15 @@
+--4.3.3按产品用途分类统计
+select m.description cpfl,isnull(zpc,0) as zpc,isnull(hgpc,0) as hgpc,isnull(pchgl,0) as pchgl,
+       isnull(bhgpc,0) as bhgpc,isnull(pcbhgl,0) as pcbhgl
+  from (select code,description from af_code where ownerid=1276) m
+       left join (select cpmc,count(*) zpc, 
+                         sum(case when zhpd='ZP01' then 1 else 0 end) as hgpc,
+                         round(sum(case when zhpd='ZP01' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as pchgl,
+                         sum(case when zhpd='ZP02' then 1 else 0 end) as bhgpc,
+                         round(sum(case when zhpd='ZP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as pcbhgl
+                    from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+                   where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+	                   and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	                   and rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+                   group by a.cpmc) a on m.code=a.cpmc
+order by zpc desc

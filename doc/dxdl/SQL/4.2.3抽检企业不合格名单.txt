@@ -1,0 +1,25 @@
+--4.2.3抽检企业不合格名单
+select a.areaname,a.qymc,a.CCCzsbh,a.scxkzbh,a.qygmmc,a.cjcs,a.hgcs,a.bhgcs,a.bhgjcl,b.cjsj,b.cpqc, b.xhgg,b.jyxm
+from (
+select b.id,c.areaname,b.qymc,b.CCCzsbh,b.scxkzbh,b.qygmmc,
+       count(*) as cjcs,
+       sum(case when zhpd='ZP01' then 1 else 0 end) as hgcs,
+       sum(case when zhpd='ZP02' then 1 else 0 end) as bhgcs,
+       round(sum(case when zhpd='ZP02' then 1 else 0 end)*1.0/dbo.dividend(count(*))*100, 2) as bhgjcl
+  from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on isnull(a.scdwid,0)=b.id
+       left join af_area c on b.qhdm=c.areacode
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+   and a.bgbh in(select distinct bgbh from dxdl_JY_REPROT_ITEM 
+                  where yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/)
+ group by b.id,c.areaname,b.qymc,b.CCCzsbh,b.scxkzbh,b.qygmmc
+having sum(case when zhpd='ZP02' then 1 else 0 end)>0) a
+inner join (select bgbh,scdwid,year as cjsj,cpqc,xhgg,dbo.getjyxm(bgbh) as jyxm
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+   and cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%' and a.zhpd='ZP02'
+   and bgbh in(select distinct bgbh from dxdl_JY_REPROT_ITEM 
+                  where yjjyxm like '%'/*条件：一级检验项目*/ and ejjyxm like '%'/*条件：二级检验项目*/)) b on a.id=b.scdwid
+order by bhgjcl desc,qymc

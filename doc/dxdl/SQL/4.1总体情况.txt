@@ -1,0 +1,200 @@
+--4.1总体情况
+select  areacode, xzqh areaname,sum(scqyzs) as scqyzs,sum(cjqy) as cjqyzs,
+       round(sum(cjqy)/dbo.dividend(sum(scqyzs))*100, 2) as cjqyzb,
+       sum(hgpc) as hgpczs,sum(bhgpc) as bhpczs,
+       round(sum(hgpc)/dbo.dividend(sum(cjpc))*100,2) as zthgl,
+       sum(jcjggcpc) as jcjggcpczs,sum(jcjgscpc) as jcjgscpczs,sum(cjjgs) as cjjgzs
+from(
+select case when a.qhdm like '13%' then '13' else '-2' end as areacode,
+       case when a.qhdm like '13%' then '河北省' else '非河北省' end as xzqh,
+       sum(case when a.state=0 then 1 else 0 end) as scqyzs,
+       sum(cjqy) as cjqy,sum(hg) as hgpc,sum(bhg) as bhgpc,sum(cjpc) as cjpc,
+       0 as jcjggcpc,0 as jcjgscpc,0 as cjjgs
+  from dxdl_scqy a
+       left join(
+       select scdwid,1 as cjqy,
+              sum(case when zhpd='ZP01' then 1 else 0 end) as hg,
+              sum(case when zhpd='ZP02' then 1 else 0 end) as bhg,
+              count(*) as cjpc
+         from dxdl_JY_REPROT_MAIN
+        where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+        group by scdwid) b on a.id=b.scdwid
+ group by case when a.qhdm like '13%' then '13' else '-2' end,
+          case when a.qhdm like '13%' then '河北省' else '非河北省' end
+union all
+select case when a.qhdm like '13%' then '13' else '-2' end as areacode,
+       case when qhdm like '13%' then '河北省' else '非河北省' end as xzqh,
+       0,0,0,0,0,sum(gc),sum(sc),count(*)
+from(
+select a.qhdm,a.id,
+       case when max(b.rwlb)='RL0202' then 1 else 0 end gc,
+       case when min(b.rwlb)='RL0201' then 1 else 0 end sc
+  from JCJG_COALORG_INFO a left join dxdl_JY_REPROT_MAIN b on a.id=b.cjdwid
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+ group by a.qhdm,a.id) a
+group by case when qhdm like '13%' then '13' else '-2' end,
+         case when qhdm like '13%' then '河北省' else '非河北省' end)a
+group by areacode,xzqh 
+order by areacode 
+--企业列表
+select * from dxdl_scqy where qhdm like '13%' and state=0
+--非河北省企业列表
+select * from dxdl_scqy where qhdm not like '13%' and state=0
+--抽检河北省企业列表
+select * from dxdl_scqy 
+where qhdm like '13%' 
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN 
+            where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--抽检非河北省企业列表
+select * from dxdl_scqy 
+where qhdm not like '13%'/*条件*/ 
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN 
+            where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--抽检合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like '13%' and a.zhpd='ZP01'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检非河北省企业合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm not like '13%' and a.zhpd='ZP01'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检不合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like '13%' and a.zhpd='ZP02'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检非河北省不合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm not like '13%' and a.zhpd='ZP02'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--4.1总体情况 表0
+select areacode,areaname,sum(scqyzs) as scqyzs,sum(cjqy) as cjqyzs,
+       round(sum(cjqy)/dbo.dividend(sum(scqyzs))*100, 2) as cjqyzb,
+       sum(hgpc) as hgpczs,sum(bhgpc) as bhpczs,
+       round(sum(hgpc)/dbo.dividend(sum(cjpc))*100,2) as zthgl,
+       sum(jcjggcpc) as jcjggcpczs,sum(jcjgscpc) as jcjgscpczs,sum(cjjgs) as cjjgzs
+from(
+select isnull(c.areacode,'130000'/*条件：行政区划*/) as areacode,
+       isnull(c.areaname,dbo.getareaname('130000'/*条件：行政区划*/,1)) as areaname,
+       sum(case when a.state=0 then 1 else 0 end) as scqyzs,sum(isnull(cjqy,0)) as cjqy,
+       sum(isnull(hg,0)) as hgpc,sum(isnull(bhg,0)) as bhgpc,sum(isnull(cjpc,0)) as cjpc,
+       0 as jcjggcpc,0 as jcjgscpc,0 as cjjgs
+  from dxdl_scqy a
+       left join(
+       select scdwid,1 as cjqy,
+              sum(case when zhpd='ZP01' then 1 else 0 end) as hg,
+              sum(case when zhpd='ZP02' then 1 else 0 end) as bhg,
+              count(*) as cjpc
+         from dxdl_JY_REPROT_MAIN
+        where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+        group by scdwid) b on a.id=b.scdwid
+        left join af_area c on substring(a.qhdm,1,len(dbo.getarea('130000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+ where a.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by c.areacode,c.areaname
+union all
+select isnull(c.areacode,'130000'/*条件：行政区划*/) as areacode,
+       isnull(c.areaname,dbo.getareaname('130000'/*条件：行政区划*/,1)) as areaname,
+       0,0,0,0,0,sum(gc),sum(sc),count(*)
+from(
+select a.qhdm,a.id,
+       case when max(b.rwlb)='RL0202' then 1 else 0 end gc,
+       case when min(b.rwlb)='RL0201' then 1 else 0 end sc
+  from JCJG_COALORG_INFO a left join dxdl_JY_REPROT_MAIN b on a.id=b.cjdwid 
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+ group by a.qhdm,a.id) a inner join af_area c on substring(a.qhdm,1,len(dbo.getarea('130000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+group by isnull(c.areacode,'130000'/*条件：行政区划*/),
+       isnull(c.areaname,dbo.getareaname('130000'/*条件：行政区划*/,1)))a
+group by areacode,areaname
+order by areacode
+--企业列表
+select * from dxdl_scqy where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%' and state=0
+--抽检河北省企业列表
+select * from dxdl_scqy 
+where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%'
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN 
+            where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--抽检合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%' and a.zhpd='ZP01'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+--抽检不合格报告
+select a.* from dxdl_JY_REPROT_MAIN a left join dxdl_scqy b on a.scdwid=b.id
+where b.qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%' and a.zhpd='ZP02'
+  and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+
+--4.1总体情况 表1（点击生产企业总数）
+select a.qhdm,b.areaname,a.id,a.qymc,a.scdz,a.fr,a.CCCzsbh,a.scxkzbh,a.qygmmc
+from dxdl_scqy a inner join af_area b on a.qhdm=b.areacode
+where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%' and a.state=0
+--企业基本信息、详细信息
+select * from dxdl_scqy where id='1'/*条件：企业ID*/
+--企业列表
+select * from dxdl_scqy where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%' and state=0
+--检验信息
+select * from dxdl_JY_REPROT_MAIN where scdwid='1'/*条件：企业ID*/ and year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+
+--4.1总体情况 表1（点击抽检企业总数）
+select a.qhdm,b.areaname,a.id,a.qymc,a.scdz,a.fr,a.CCCzsbh,a.scxkzbh,a.qygmmc
+from dxdl_scqy a inner join af_area b on a.qhdm=b.areacode
+where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%'
+  and a.id in(select distinct scdwid from dxdl_JY_REPROT_MAIN where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--企业基本信息、详细信息
+select * from dxdl_scqy where id='1'/*条件：企业ID*/
+--企业列表
+select * from dxdl_scqy where qhdm like dbo.getarea('130000'/*条件：行政区划代码*/)+'%'
+  and id in(select distinct scdwid from dxdl_JY_REPROT_MAIN where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)
+--检验信息
+select * from dxdl_JY_REPROT_MAIN where scdwid='1'/*条件：企业ID*/ and year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+
+--4.1总体情况 表2
+select cjdwid,cjdw,sum(gcpc) as gcpc,sum(scpc) as scpc,sum(rw) as rwzl,
+       round(sum(rw)*1.0/(select count(*) from dxdl_JY_REPROT_MAIN 
+                                  where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/)*100,2) as rwzb
+from(
+select cjdwid,cjdw,
+       case when rwlb='RL0202' then 1 else 0 end gcpc,
+       case when rwlb='RL0201' then 1 else 0 end scpc,
+       1 as rw
+from dxdl_JY_REPROT_MAIN
+where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/) a
+group by cjdwid,cjdw
+--承检机构详细信息
+select * from JCJG_COALORG_INFO 
+ where id=0/*条件：承检机构ID*/
+
+
+--总体情况表0（非河北省）
+select areacode,areaname,sum(scqyzs) as scqyzs,sum(cjqy) as cjqyzs,
+       round(sum(cjqy)/dbo.dividend(sum(scqyzs))*100, 2) as cjqyzb,
+       sum(hgpc) as hgpczs,sum(bhgpc) as bhpczs,
+       round(sum(hgpc)/dbo.dividend(sum(cjpc))*100,2) as zthgl,
+       sum(jcjggcpc) as jcjggcpczs,sum(jcjgscpc) as jcjgscpczs,sum(cjjgs) as cjjgzs
+from(
+select c.areacode,c.areaname,
+       sum(case when a.state=0 then 1 else 0 end) as scqyzs,sum(isnull(cjqy,0)) as cjqy,
+       sum(isnull(hg,0)) as hgpc,sum(isnull(bhg,0)) as bhgpc,sum(isnull(cjpc,0)) as cjpc,
+       0 as jcjggcpc,0 as jcjgscpc,0 as cjjgs
+  from dxdl_scqy a
+       left join(
+       select scdwid,1 as cjqy,
+              sum(case when zhpd='ZP01' then 1 else 0 end) as hg,
+              sum(case when zhpd='ZP02' then 1 else 0 end) as bhg,
+              count(*) as cjpc
+         from dxdl_JY_REPROT_MAIN
+        where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/
+        group by scdwid) b on a.id=b.scdwid
+        left join af_area c on left(a.qhdm,4)+'00'=dbo.getarea(c.areacode)
+ where a.qhdm not like '13%'
+ group by c.areacode,c.areaname
+union all
+select c.areacode,c.areaname,
+       0,0,0,0,0,sum(gc),sum(sc),count(*)
+from(
+select a.qhdm,a.id,
+       case when max(b.rwlb)='RL0202' then 1 else 0 end gc,
+       case when min(b.rwlb)='RL0201' then 1 else 0 end sc
+  from JCJG_COALORG_INFO a left join dxdl_JY_REPROT_MAIN b on a.id=b.cjdwid 
+ where year>='2010'/*条件：年份段*/ and year<='2017'/*条件：年份段*/ and a.qhdm not like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by a.qhdm,a.id) a inner join af_area c on substring(a.qhdm,1,len(dbo.getarea('130000'/*条件：行政区划*/))+2)=dbo.getarea(c.areacode)
+group by c.areacode,c.areaname)a
+group by areacode,areaname
+order by areacode

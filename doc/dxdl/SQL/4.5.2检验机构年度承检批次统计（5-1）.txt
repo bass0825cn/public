@@ -1,0 +1,11 @@
+--4.5.2检验机构年度承检批次统计
+select b.id,b.jgmc,
+       sum(case when year='2012' then 1 else 0 end) as cjpc,
+       sum(case when year='2012' and zhpd='ZP01' then 1 else 0 end) as hgpc,
+       sum(case when year='2012' and zhpd='ZP02' then 1 else 0 end) as bhgpc
+  from dxdl_JY_REPROT_MAIN a inner join JCJG_COALORG_INFO b on a.cjdwid=b.id
+ where b.products like '%CP0317%' and zt=0
+   and a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and cpid like '%'/*条件：产品选择（名称）*/
+	 and a.rwlb like 'RL02%'/*条件：抽检类型*/ and b.qhdm like dbo.getarea(''/*条件：行政区划*/)+'%'
+ group by b.id,b.jgmc

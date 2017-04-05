@@ -1,0 +1,25 @@
+--4.2.1.2产业聚集工生产企业地区分布情况
+select newid() id,isnull(areacode,'130000'/*条件：行政区划*/) as xzqh,
+       dbo.getareaname(isnull(areacode,'130000'/*条件：行政区划*/),2) as qy,
+       qysl,isnull(cjpc,0) as cjpc,
+       CCCqysl qysl1,round(convert(decimal(10,2),CCCqysl)/qysl*100,2) as zbl,
+       scxkzqysl qysl2,round(convert(decimal(10,2),scxkzqysl)/qysl*100,2) as zb2,
+       dxqysl qysl3,round(convert(decimal(10,2),dxqysl)/qysl*100,2) as zb3,
+       zxqysl qysl4,round(convert(decimal(10,2),zxqysl)/qysl*100,2) as zb4,
+       xxqysl qysl5,round(convert(decimal(10,2),xxqysl)/qysl*100,2) as zb5
+from(
+select c.areacode,c.areaname,count(distinct a.qymc) as qysl,sum(b.cjpc) as cjpc,
+       sum(case when a.CCCzsbh is null then 0 else 1 end) as CCCqysl,
+       sum(case when a.scxkzbh is null then 0 else 1 end) as scxkzqysl,
+       sum(case when a.qygmmc='大型' then 1 else 0 end) as dxqysl,
+       sum(case when a.qygmmc='中型' then 1 else 0 end) as zxqysl,
+       sum(case when a.qygmmc='小型' then 1 else 0 end) as xxqysl
+from dxdl_scqy a 
+     left join (select scdwid,count(*) as cjpc from dxdl_JY_REPROT_MAIN group by scdwid) b on a.id=b.scdwid
+     left join AF_AREA c on a.qhdm=dbo.getarea(c.areacode)
+where a.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%' and a.state=0
+group by c.areacode,c.areaname
+having count(distinct a.qymc)>=30) a
+order by qysl desc
+--企业列表
+select * from dxdl_scqy where qhdm='130984'/*条件*/ and state=0

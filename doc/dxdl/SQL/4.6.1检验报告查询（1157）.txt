@@ -1,0 +1,22 @@
+--4.6.1检验报告查询
+
+ select a.id,bgbh AS  bh ,f.description AS lx,c.jgmc as jg,b.qymc as qy,d.description as jyjg,e.cpmc as mc 
+
+  from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+       inner join JCJG_COALORG_INFO c on a.cjdwid=c.id
+       inner join af_code d on a.zhpd=d.code and d.ownerid=2241
+       inner join af_code f on a.rwlb=f.code and f.ownerid=2262
+       inner join production_name e on a.cpid=e.id
+ where bgbh like '%'/*条件：报告编号*/ and a.rwlb like 'RL0202%'/*条件：抽检类型*/ 
+   and a.year>='2012'/*条件：年份段*/ and a.year<='2012'/*条件：年份段*/
+	 and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and a.zxbz like '%'/*条件：*/
+   and b.qymc like '%%'/*条件8：生产企业名称*/ and c.jgmc like '%%'/*条件：承检机构名称*/
+	 and b.qhdm like dbo.getarea('130000'/*条件：生产企业行政区划*/)+'%'
+   and c.qhdm like dbo.getarea('130000'/*条件：承检机构行政区划*/)+'%'
+   and a.zhpd like '%'/*条件：检验结果*/
+
+
+
+
+and d.description LIKE '" +pdjg + "%'

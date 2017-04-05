@@ -1,0 +1,10 @@
+--4.2.4未抽检企业名单
+select a.qhdm,b.areaname,a.id,a.qymc,a.fr,a.CCCzsbh,a.scxkzbh,a.qygmmc,a.lxdh,a.scdz
+from dxdl_scqy a inner join af_area b on a.qhdm=b.areacode
+where qhdm like dbo.getarea('130100')+'%'/*条件：行政区划*/ and isnull(qygmdm,'') like '%'/*条件:企业规模选择（代码）*/
+  and a.id not in(select distinct scdwid from dxdl_JY_REPROT_MAIN)
+--企业基本信息、详细信息
+select * from dxdl_scqy where id='1'/*条件*/
+--企业列表
+select * from dxdl_scqy where qhdm like dbo.getarea('130100')+'%'/*条件：行政区划*/ and isnull(qygmdm,'') like '%'/*条件:企业规模选择（代码）*/
+and id not in(select distinct scdwid from dxdl_JY_REPROT_MAIN)

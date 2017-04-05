@@ -1,0 +1,55 @@
+--4.2.2.5生产企业重复抽检情况
+select newid() id,isnull(isnull(a.cjcs,b.cjcs),c.cjcs) as cjcs,
+       isnull(a.cfgcqys,0) as qysl1,isnull(gccjqyzs,0),
+       round(isnull(a.cfgcqys,0)*1.0/dbo.dividend(isnull(gccjqyzs,0))*100, 2) as zb1,
+       isnull(b.cfscqys,0) as qysl2,isnull(sccjqyzs,0),
+       round(isnull(b.cfscqys,0)*1.0/dbo.dividend(isnull(sccjqyzs,0))*100, 2) as zb2,
+       isnull(c.cfcjqys,0) as qysl3,isnull(cjqyzs,0),
+       round(isnull(c.cfcjqys,0)*1.0/dbo.dividend(isnull(cjqyzs,0))*100, 2) as zb3
+from(
+select cjcs,count(*) as cfgcqys,gccjqyzs from(
+select count(*) as cjcs,scdwid
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0202'
+ group by scdwid
+having count(*)>=1/*条件：重复抽检区间*/ and count(*)<=100/*条件：重复抽检区间*/) x,(
+select count(distinct scdwid) as gccjqyzs
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0202') y group by cjcs,gccjqyzs) a 
+full join(
+select cjcs,count(*) as cfscqys,sccjqyzs from(
+select count(*) as cjcs,scdwid
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0201'
+ group by scdwid
+having count(*)>=1/*条件：重复抽检区间*/ and count(*)<=100/*条件：重复抽检区间*/) x,(
+select count(distinct scdwid) as sccjqyzs
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+   and a.rwlb='RL0201') y group by cjcs,sccjqyzs) b on a.cjcs=b.cjcs
+full join(
+select cjcs,count(*) as cfcjqys,cjqyzs from(
+select count(*) as cjcs,scdwid
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%'
+ group by scdwid
+having count(*)>=1/*条件：重复抽检区间*/ and count(*)<=100/*条件：重复抽检区间*/) x,(
+select count(distinct scdwid) as cjqyzs
+from dxdl_JY_REPROT_MAIN a inner join dxdl_scqy b on a.scdwid=b.id
+ where a.year>='2010'/*条件：年份段*/ and a.year<='2017'/*条件：年份段*/
+   and a.cpmc like '%'/*条件：产品选择（分类）*/ and a.cpid like '%'/*条件：产品选择（名称）*/
+   and b.qhdm like dbo.getarea('130000'/*条件：行政区划*/)+'%') y group by cjcs,cjqyzs) c on a.cjcs=c.cjcs
+order by cjcs desc
